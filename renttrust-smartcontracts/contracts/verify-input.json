@@ -1,0 +1,24 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "contracts/RentTrust.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.18;\n\ncontract RentTrust {\n    address public landlord;\n    address public tenant;\n\n    // ✅ New fields for full rental agreement data\n    string public propertyAddress;\n    uint public rentAmount;\n    uint public securityDeposit;\n    uint public startDate;\n    uint public endDate;\n    string public rules;\n\n    uint public dueDate;\n    bool public isActive;\n\n    event RentPaid(address indexed tenant, uint amount, uint date);\n    event RentalAgreementCreated(\n        address landlord,\n        address tenant,\n        string propertyAddress,\n        uint rentAmount,\n        uint securityDeposit,\n        uint startDate,\n        uint endDate,\n        string rules\n    );\n    event SecurityDepositPaid(address tenant, uint amount, uint date);\n\n    modifier onlyTenant() {\n        require(msg.sender == tenant, \"Only the tenant can call this\");\n        _;\n    }\n\n    modifier onlyLandlord() {\n        require(msg.sender == landlord, \"Only the landlord can call this\");\n        _;\n    }\n\n    constructor(\n        address _tenant,\n        string memory _propertyAddress,\n        uint _rentAmount,\n        uint _securityDeposit,\n        uint _startDate,\n        uint _endDate,\n        uint _dueDate,\n        string memory _rules\n    ) {\n        landlord = msg.sender;\n        tenant = _tenant;\n\n        // ✅ Initialize new fields\n        propertyAddress = _propertyAddress;\n        rentAmount = _rentAmount;\n        securityDeposit = _securityDeposit;\n        startDate = _startDate;\n        endDate = _endDate;\n        dueDate = _dueDate;\n        rules = _rules;\n\n        isActive = true;\n\n        emit RentalAgreementCreated(\n            landlord,\n            tenant,\n            _propertyAddress,\n            _rentAmount,\n            _securityDeposit,\n            _startDate,\n            _endDate,\n            _rules\n        );\n    }\n\n    // ✅ Pay rent function (unchanged but includes extra data now)\n    function payRent() external payable onlyTenant {\n        require(isActive, \"Rental agreement is not active\");\n        require(msg.value == rentAmount, \"Incorrect rent amount\");\n        require(block.timestamp <= dueDate, \"Payment is overdue\");\n\n        payable(landlord).transfer(msg.value);\n        emit RentPaid(msg.sender, msg.value, block.timestamp);\n    }\n\n    // ✅ New: Tenant pays security deposit (if not handled in constructor)\n    function paySecurityDeposit() external payable onlyTenant {\n        require(msg.value == securityDeposit, \"Incorrect deposit amount\");\n        payable(landlord).transfer(msg.value);\n        emit SecurityDepositPaid(msg.sender, msg.value, block.timestamp);\n    }\n\n    function terminateAgreement() external onlyLandlord {\n        isActive = false;\n    }\n}"
+    }
+  },
+  "settings": {
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers"
+        ]
+      }
+    }
+  }
+}
